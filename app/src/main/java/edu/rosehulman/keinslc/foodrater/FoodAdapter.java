@@ -1,35 +1,32 @@
 package edu.rosehulman.keinslc.foodrater;
 
 import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
 
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.T;
-
 /**
  * Created by keinslc on 12/13/2016.
  */
 
-public class FoodAdapter extends BaseAdapter {
+public class FoodAdapter extends RecyclerView.Adapter<FoodAdapter.ViewHolder> {
     private HashMap<String, Integer> sDefaultNamesAndIds;
     private ArrayList<Food> mFoods;
     private Context mContext;
     private Random random;
+    private RecyclerView mRecyclerView;
 
-    public FoodAdapter(Context context) {
+    public FoodAdapter(Context context, RecyclerView recyclerView) {
         // Puts all of the image IDs into the hashmap for later
         // courtesy of Dr. Boutell
         sDefaultNamesAndIds = new HashMap<>();
@@ -45,6 +42,7 @@ public class FoodAdapter extends BaseAdapter {
         generateDefaultFood();
         mContext = context;
         random = new Random();
+        mRecyclerView = recyclerView;
     }
 
     /**
@@ -67,59 +65,71 @@ public class FoodAdapter extends BaseAdapter {
         String[] foodNames = new String[foodKeys.size()];
         foodKeys.toArray(foodNames);
         int rand = random.nextInt(foodNames.length);
-        mFoods.add(new Food(foodNames[rand], sDefaultNamesAndIds.get(foodNames[rand]), 0));
-        notifyDataSetChanged();
+        // Add at position 0 a new Food
+        mFoods.add(0, new Food(foodNames[rand], sDefaultNamesAndIds.get(foodNames[rand]), 0));
+        mRecyclerView.getLayoutManager().scrollToPosition(0);
+        notifyItemInserted(0);
     }
 
 
     public void removeFood(int i) {
         mFoods.remove(i);
-        notifyDataSetChanged();
+        notifyItemRemoved(i);
     }
 
-    @Override
-    public Object getItem(int i) {
-        return null;
-    }
+    /*        VIEW HOLDER CLASS      */
 
-    @Override
-    public long getItemId(int i) {
-        return 0;
-    }
 
-    @Override
-    public int getCount() {
-        return mFoods.size();
-    }
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener{
+        private TextView mFoodNameTextView;
+        private ImageView mFoodImageView;
+        private RatingBar mFoodRatingBar;
 
-    @Override
-    public View getView(final int position, View convertView, ViewGroup viewGroup) {
-        View view = null;
-        if (convertView == null) {
-            // We have to make it
-            view = LayoutInflater.from(mContext).inflate(R.layout.food_row_view, viewGroup, false);
-        } else {
-            // Reuse it
-            view = convertView;
+        // Happens2nd, captures the views
+        public ViewHolder(View itemView) {
+            super(itemView);
+            // Capture Views
+            itemView.setOnLongClickListener(this);
+            mFoodNameTextView = (TextView) itemView.findViewById(R.id.foodNameTextView);
+            mFoodImageView = (ImageView) itemView.findViewById(R.id.foodImageView);
+            mFoodRatingBar = (RatingBar) itemView.findViewById(R.id.foodRatingBar);
+
+            mFoodRatingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                @Override
+                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                    // Uses the adapter to retrive the position
+                    mFoods.get(getAdapterPosition()).setRating(rating);
+                }
+            });
         }
-        // Customize the view
-        TextView mFoodNameTextView = (TextView) view.findViewById(R.id.foodNameTextView);
-        ImageView mFoodImageView = (ImageView) view.findViewById(R.id.foodImageView);
-        RatingBar mFoodRatingBar = (RatingBar) view.findViewById(R.id.foodRatingBar);
 
-        // Really Fun Bug when this isn't here
-        mFoodRatingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
-            @Override
-            public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
-                mFoods.get(position).setRating(rating);
-            }
-        });
+        // Long Click Deletion
+        @Override
+        public boolean onLongClick(View v) {
+            removeFood(getAdapterPosition());
+            return true;
+        }
+        // Used for swiping things off
+    }
 
-        mFoodImageView.setImageResource(mFoods.get(position).getResourceID());
-        mFoodNameTextView.setText(mFoods.get(position).getName());
-        mFoodRatingBar.setRating(mFoods.get(position).getRating());
+    // Happens First, inflates our view holder with the item view
+    @Override
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(mContext).inflate(R.layout.food_row_view, parent, false);
+        return new ViewHolder(itemView);
+    }
 
-        return view;
+    // When it binds, update the views Happens 3rd
+    @Override
+    public void onBindViewHolder(ViewHolder holder, int position) {
+        holder.mFoodImageView.setImageResource(mFoods.get(position).getResourceID());
+        holder.mFoodNameTextView.setText(mFoods.get(position).getName());
+        holder.mFoodRatingBar.setRating(mFoods.get(position).getRating());
+    }
+
+    @Override
+    public int getItemCount() {
+        return mFoods.size();
     }
 
 }

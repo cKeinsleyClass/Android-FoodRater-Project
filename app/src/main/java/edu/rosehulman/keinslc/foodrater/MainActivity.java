@@ -2,15 +2,14 @@ package edu.rosehulman.keinslc.foodrater;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
-import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,18 +33,13 @@ public class MainActivity extends AppCompatActivity {
         //Capture view
 
         /* List View  */
-        ListView listView = (ListView) findViewById(R.id.food_list_view);
-        mFoodAdapter = new FoodAdapter(this);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.food_recycler_view);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
         // Binds the adapter to the view
-        listView.setAdapter(mFoodAdapter);
-        // Long click for deletion
-        listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                mFoodAdapter.removeFood(i);
-                return true;
-            }
-        });
+        mFoodAdapter = new FoodAdapter(this, recyclerView);
+        recyclerView.setAdapter(mFoodAdapter);
     }
 
     @Override
